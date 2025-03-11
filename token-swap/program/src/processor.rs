@@ -338,6 +338,7 @@ impl Processor {
         if let Some(swap_constraints) = swap_constraints {
             let owner_key = swap_constraints
                 .owner_key
+                .unwrap()
                 .parse::<Pubkey>()
                 .map_err(|_| SwapError::InvalidOwner)?;
             if fee_account.owner != owner_key {
@@ -1262,9 +1263,8 @@ fn invoke_signed_wrapper<T>(
 where
     T: 'static + PrintProgramError + DecodeError<T> + FromPrimitive + Error,
 {
-    invoke_signed(instruction, account_infos, signers_seeds).map_err(|err| {
+    invoke_signed(instruction, account_infos, signers_seeds).inspect_err(|err| {
         err.print::<T>();
-        err
     })
 }
 
@@ -3109,10 +3109,10 @@ mod tests {
                 curve_type: CurveType::ConstantProduct,
                 calculator: Arc::new(curve),
             };
-            let owner_key = &new_key.to_string();
+            let owner_key = new_key.to_string();
             let valid_curve_types = &[CurveType::ConstantProduct];
             let constraints = Some(SwapConstraints {
-                owner_key,
+                owner_key: Some(owner_key.as_ref()),
                 valid_curve_types,
                 fees: &fees,
             });
@@ -3182,10 +3182,10 @@ mod tests {
                 curve_type: CurveType::ConstantProduct,
                 calculator: Arc::new(curve),
             };
-            let owner_key = &user_key.to_string();
+            let owner_key = user_key.to_string();
             let valid_curve_types = &[CurveType::ConstantProduct];
             let constraints = Some(SwapConstraints {
-                owner_key,
+                owner_key: Some(owner_key.as_ref()),
                 valid_curve_types,
                 fees: &fees,
             });
@@ -3257,10 +3257,10 @@ mod tests {
                 curve_type: CurveType::ConstantProduct,
                 calculator: Arc::new(curve),
             };
-            let owner_key = &user_key.to_string();
+            let owner_key = user_key.to_string();
             let valid_curve_types = &[CurveType::ConstantProduct];
             let constraints = Some(SwapConstraints {
-                owner_key,
+                owner_key: Some(owner_key.as_ref()),
                 valid_curve_types,
                 fees: &fees,
             });
@@ -6481,10 +6481,10 @@ mod tests {
             calculator: Arc::new(curve),
         };
 
-        let owner_key_str = &owner_key.to_string();
+        let owner_key_str = owner_key.to_string();
         let valid_curve_types = &[CurveType::ConstantProduct];
         let constraints = Some(SwapConstraints {
-            owner_key: owner_key_str,
+            owner_key: Some(owner_key_str.as_ref()),
             valid_curve_types,
             fees: &fees,
         });
@@ -7184,7 +7184,7 @@ mod tests {
                 _pool_key,
                 _pool_account,
             ) = accounts.setup_token_accounts(&user_key, &authority_key, initial_a, initial_b, 0);
-            let owner_key = &swapper_key.to_string();
+            let owner_key = swapper_key.to_string();
             let fees = Fees {
                 trade_fee_numerator,
                 trade_fee_denominator,
@@ -7196,7 +7196,7 @@ mod tests {
                 host_fee_denominator,
             };
             let constraints = Some(SwapConstraints {
-                owner_key,
+                owner_key: Some(owner_key.as_ref()),
                 valid_curve_types: &[],
                 fees: &fees,
             });
@@ -7264,7 +7264,7 @@ mod tests {
                 _pool_key,
                 _pool_account,
             ) = accounts.setup_token_accounts(&user_key, &authority_key, initial_a, initial_b, 0);
-            let owner_key = &swapper_key.to_string();
+            let owner_key = swapper_key.to_string();
             let fees = Fees {
                 trade_fee_numerator,
                 trade_fee_denominator,
@@ -7276,7 +7276,7 @@ mod tests {
                 host_fee_denominator,
             };
             let constraints = Some(SwapConstraints {
-                owner_key,
+                owner_key: Some(owner_key.as_ref()),
                 valid_curve_types: &[],
                 fees: &fees,
             });
@@ -8188,9 +8188,9 @@ mod tests {
             calculator: Arc::new(ConstantProductCurve {}),
         };
 
-        let owner_key_str = &owner_key.to_string();
+        let owner_key_str = owner_key.to_string();
         let constraints = Some(SwapConstraints {
-            owner_key: owner_key_str,
+            owner_key: Some(owner_key_str.as_ref()),
             valid_curve_types: &[CurveType::ConstantProduct],
             fees: &fees,
         });

@@ -60,6 +60,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Remove unneeded packages for more space
+        run: bash ./ci/warning/purge-ubuntu-runner.sh
+
       - name: Set env vars
         run: |
           source ci/rust-version.sh
@@ -84,7 +87,7 @@ jobs:
         run: ./ci/install-build-deps.sh
 
       - name: Run clippy
-        run: ./cargo-nightly clippy -Zunstable-options --workspace --all-targets --features test-sbf -- --deny=warnings --deny=clippy::arithmetic_side_effects
+        run: ./cargo-nightly clippy -Zunstable-options --workspace --all-targets --all-features -- --deny=warnings --deny=clippy::arithmetic_side_effects
 
   cargo-build-test:
     runs-on: ubuntu-latest
@@ -141,6 +144,8 @@ jobs:
     steps:
       - name: Git Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # get the whole history for git-cliff
 
       - name: Set env vars
         run: |
@@ -150,6 +155,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_STABLE }}
+
+      - name: Install dependencies
+        run: ./ci/install-build-deps.sh
 
       - uses: actions/cache@v4
         with:
@@ -162,7 +170,7 @@ jobs:
             cargo-publish-
 
       - name: Install Cargo Release
-        run: which cargo-release || cargo install cargo-release
+        run: which cargo-release || cargo install cargo-release --version 0.25.11
 
       - name: Ensure CARGO_REGISTRY_TOKEN variable is set
         env:
@@ -177,6 +185,9 @@ jobs:
         run: |
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
+
+      - name: Rebase
+        run: git pull --rebase origin
 
       - name: Publish Crate
         id: publish
@@ -197,12 +208,23 @@ jobs:
 
           ./ci/publish-rust.sh "${{ inputs.package_path }}" $LEVEL $OPTIONS
 
-      - name: Push Commit and Tag
-        if: github.event.inputs.dry_run != 'true'
-        run: git push origin --follow-tags
+      - name: Generate a changelog
+        if: github.event.inputs.create_release == 'true'
+        uses: orhun/git-cliff-action@v3
+        with:
+          config: "ci/cliff.toml"
+          args: |
+            "${{ steps.publish.outputs.old_git_tag }}"..master
+            --include-path "${{ inputs.package_path }}/**"
+            --github-repo "${{ github.repository }}"
+        env:
+          OUTPUT: TEMP_CHANGELOG.md
+          GITHUB_REPO: ${{ github.repository }}
 
       - name: Create GitHub release
         if: github.event.inputs.create_release == 'true' && github.event.inputs.dry_run != 'true'
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ steps.publish.outputs.new_git_tag }}
+          bodyFile: TEMP_CHANGELOG.md
+          name: ${{ steps.publish.outputs.release_title }}

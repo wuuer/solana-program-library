@@ -22,17 +22,17 @@ document are available at:
 ## Source
 
 The Token Program's source is available on
-[GitHub](https://github.com/solana-labs/solana-program-library)
+[GitHub](https://github.com/solana-program/token).
 
 ## Interface
 
 The Token Program is written in Rust and available on [crates.io](https://crates.io/crates/spl-token) and [docs.rs](https://docs.rs/spl-token).
 
 Auto-generated C bindings are also available
-[here](https://github.com/solana-labs/solana-program-library/blob/master/token/program/inc/token.h)
+[here](https://github.com/solana-program/token/blob/main/program/inc/token.h)
 
 [JavaScript
-bindings](https://github.com/solana-labs/solana-program-library/tree/master/token/js)
+bindings](https://github.com/solana-program/token-2022/tree/main/clients/js-legacy)
 are available that support loading the Token Program on to a chain and issue
 instructions.
 
@@ -113,7 +113,7 @@ const web3 = require('@solana/web3.js');
 const connection = new web3.Connection(web3.clusterApiUrl('devnet'), 'confirmed');
 ```
 ### Keypair
-You can either get your keypair using [`Keypair`](https://solana-labs.github.io/solana-web3.js/classes/Keypair.html) from `@solana/web3.js`, or let the user's wallet handle the keypair and use `sendTransaction` from [`wallet-adapter`](https://github.com/solana-labs/wallet-adapter)
+You can either get your keypair using [`Keypair`](https://solana-labs.github.io/solana-web3.js/v1.x/classes/Keypair.html) from `@solana/web3.js`, or let the user's wallet handle the keypair and use `sendTransaction` from [`wallet-adapter`](https://github.com/solana-labs/wallet-adapter)
 
   </TabItem>
 </Tabs>
@@ -1676,6 +1676,11 @@ require the Solana account being initialized also be a signer. The
 `InitializeMultisig` instruction should be atomically processed with the system
 instruction that creates the Solana account by including both instructions in
 the same transaction.
+
+Also, multisignatures allow for duplicate accounts in the signer sets, for very
+simple weighting systems. For example, a 2 of 4 multisig can be constructed with
+3 unique pubkeys, and one pubkey specified twice to give that pubkey double
+voting power.
 
 ### Freezing accounts
 
